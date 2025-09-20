@@ -1,0 +1,84 @@
+-- CTE 1: Seleciona a base, cria a coluna 'edicao' e limpa os nomes dos estádios
+WITH base_partidas AS (
+  SELECT
+    CAST(data AS DATE) as data_partida,
+    rodada,
+    mandante,
+    visitante,
+    vencedor,
+    gols_mandante,
+    gols_visitante,
+    TRIM(estadio) AS estadio, 
+    CASE
+      WHEN EXTRACT(YEAR FROM data) = 2021 AND EXTRACT(MONTH FROM data) < 4 THEN 2020
+      ELSE EXTRACT(YEAR FROM data)
+    END AS edicao
+  FROM
+    `seu-id-de-projeto.futebol_brasileiro.partidas_full`
+),
+
+-- CTE 2: Adiciona a lógica de pontos para cada partida
+partidas_com_pontos AS (
+  SELECT
+    *,
+    CASE WHEN vencedor = mandante THEN 3 WHEN vencedor = '-' THEN 1 ELSE 0 END AS pontos_mandante,
+    CASE WHEN vencedor = visitante THEN 3 WHEN vencedor = '-' THEN 1 ELSE 0 END AS pontos_visitante
+  FROM
+    base_partidas
+),
+
+-- CTE 3: "Desempilha" os dados para ter uma linha por time por jogo (NOVA ETAPA)
+jogos_por_time AS (
+  -- Seleciona os dados do ponto de vista do TIME MANDANTE
+  SELECT
+    edicao,
+    data_partida,
+    mandante AS time,
+    pontos_mandante AS pontos,
+    gols_mandante AS gols_pro,
+    gols_visitante AS gols_contra
+  FROM
+    partidas_com_pontos
+  
+  UNION ALL -- Empilha os resultados abaixo
+
+  -- Seleciona os dados do ponto de vista do TIME VISITANTE
+  SELECT
+    edicao,
+    data_partida,
+    visitante AS time,
+    pontos_visitante AS pontos,
+    gols_visitante AS gols_pro,
+    gols_mandante AS gols_contra
+  FROM
+    partidas_com_pontos
+),
+
+-- CTE 4: Agrega os resultados para criar a tabela de classificação final (ETAPA FINAL)
+classificacao_final AS (
+  SELECT
+    edicao,
+    time,
+    SUM(pontos) AS pontos_totais,
+    COUNT(data_partida) AS partidas_jogadas,
+    SUM(CASE WHEN pontos = 3 THEN 1 ELSE 0 END) AS vitorias,
+    SUM(CASE WHEN pontos = 1 THEN 1 ELSE 0 END) AS empates,
+    SUM(CASE WHEN pontos = 0 THEN 1 ELSE 0 END) AS derrotas,
+    SUM(gols_pro) AS gols_pro,
+    SUM(gols_contra) AS gols_contra,
+    (SUM(gols_pro) - SUM(gols_contra)) AS saldo_de_gols
+  FROM
+    jogos_por_time
+  GROUP BY
+    edicao,
+    time
+)
+
+
+-- Para salvar a Nova tabela fact_partidas, foi utilizado essa query:
+SELECT * FROM partidas_com_pontos;
+
+
+--  Para salvar a Nova tabela dim_classificacao_anual, foi utilizado essa query:
+
+SELECT * FROM classificacao_final;
