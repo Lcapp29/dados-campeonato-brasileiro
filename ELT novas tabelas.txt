@@ -1,4 +1,4 @@
--- CTE 1: Seleciona a base, cria a coluna 'edicao' e limpa os nomes dos estádios
+-- CTE 1:
 WITH base_partidas AS (
   SELECT
     CAST(data AS DATE) as data_partida,
@@ -17,7 +17,7 @@ WITH base_partidas AS (
     `meu-id-de-projeto.futebol_brasileiro.partidas_full`
 ),
 
--- CTE 2: Adiciona a lógica de pontos para cada partida
+-- CTE 2:
 partidas_com_pontos AS (
   SELECT
     *,
@@ -27,7 +27,7 @@ partidas_com_pontos AS (
     base_partidas
 ),
 
--- CTE 3: "Desempilha" os dados para ter uma linha por time por jogo (NOVA ETAPA)
+-- CTE 3: 
 jogos_por_time AS (
   -- Seleciona os dados do ponto de vista do TIME MANDANTE
   SELECT
@@ -40,9 +40,8 @@ jogos_por_time AS (
   FROM
     partidas_com_pontos
   
-  UNION ALL -- Empilha os resultados abaixo
+  UNION ALL 
 
-  -- Seleciona os dados do ponto de vista do TIME VISITANTE
   SELECT
     edicao,
     data_partida,
@@ -54,7 +53,7 @@ jogos_por_time AS (
     partidas_com_pontos
 ),
 
--- CTE 4: Agrega os resultados para criar a tabela de classificação final (ETAPA FINAL)
+-- CTE 4: 
 classificacao_final AS (
   SELECT
     edicao,
@@ -82,4 +81,5 @@ SELECT * FROM partidas_com_pontos;
 --  Para salvar a Nova tabela dim_classificacao_anual, foi utilizado essa query:
 
 SELECT * FROM classificacao_final;
+
 
