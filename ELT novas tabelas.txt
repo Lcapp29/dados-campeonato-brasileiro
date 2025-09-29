@@ -14,7 +14,7 @@ WITH base_partidas AS (
       ELSE EXTRACT(YEAR FROM data)
     END AS edicao
   FROM
-    `seu-id-de-projeto.futebol_brasileiro.partidas_full`
+    `meu-id-de-projeto.futebol_brasileiro.partidas_full`
 ),
 
 -- CTE 2: Adiciona a lógica de pontos para cada partida
@@ -82,3 +82,4 @@ SELECT * FROM partidas_com_pontos;
 --  Para salvar a Nova tabela dim_classificacao_anual, foi utilizado essa query:
 
 SELECT * FROM classificacao_final;
+
